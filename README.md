@@ -82,9 +82,9 @@ logging.basicConfig(
 
 # Update this section with your City of Toronto Utility account information
 account_number="000000000"
-client_number="000000000=00"
+client_number="000000000-00"
 last_name="lastname"
-postal_code="x1x_1x1"
+postal_code="X1X 1X1"
 last_payment_method=LastPaymentMethod.BANK_PAYMENT
 
 async def main():
