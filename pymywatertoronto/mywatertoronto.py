@@ -114,7 +114,7 @@ class MyWaterToronto:
                    'LAST_PAYMENT_METHOD': self._last_payment_method.value}
 
         async with self._session.post(url=url, headers=HTTP_HEADERS, json=payload, verify_ssl=False) as resp:
-            if resp.status == HTTP_MOVED_TEMPORARILY:
+            if resp.status == HTTP_MOVED_TEMPORARILY or resp.real_url.name == "something-went-wrong.html":
                 raise ValidateAccountInfoError("Invalid account information")
             if resp.status != HTTPStatus.OK:
                 error_text = json.loads(await resp.text())
