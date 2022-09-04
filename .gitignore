@@ -133,3 +133,4 @@ dmypy.json
 
 #pywatertoronto specific files
 test.py
+data*.json

@@ -1,9 +1,7 @@
 """All functions for formatting time."""
 
-from datetime import (
-    date,
-    timedelta
-)
+from datetime import date, timedelta
+
 
 def format_date(date: date) -> date:
     """
@@ -16,7 +14,7 @@ def format_date(date: date) -> date:
         Formatted date.
 
     """
-    return date.strftime('%Y-%m-%d')  # noqa: WPS323
+    return date.strftime("%Y-%m-%d")  # noqa: WPS323
 
 
 def format_start_year(date: date) -> date:
@@ -30,8 +28,7 @@ def format_start_year(date: date) -> date:
         Formatted date.
 
     """
-    return format_date(date.replace(month=1, day=1)
-    )
+    return format_date(date.replace(month=1, day=1))
 
 
 def format_start_month(date: date) -> date:

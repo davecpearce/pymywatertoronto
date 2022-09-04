@@ -1,5 +1,5 @@
 class AccountNotValidatedError(Exception):
-    """Raised when the account has not been validated yet and there is no ref token."""
+    """Raised when the account has not been validated yet."""
 
     def __init__(self, status: str) -> None:
         """Initialize."""
@@ -8,6 +8,7 @@ class AccountNotValidatedError(Exception):
 
 
 """ Define package errors """
+
 
 class ApiError(Exception):
     """Raised when MyWaterToronto API request ended in error."""
