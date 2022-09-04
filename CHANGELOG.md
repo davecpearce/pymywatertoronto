@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2022-09-03
+## [1.1.1] - 2022-09-04
+### Changed
+- devcontainer to install build and twine
+
+## [1.1.0] - 2022-09-04
 ### Added
 - devcontainer configurations
 - Pre-commit tasks

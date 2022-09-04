@@ -21,6 +21,13 @@ RUN apt-get update && apt-get -y dist-upgrade \
     # Install bumpver
     && pip --disable-pip-version-check --no-cache-dir install bumpver \
     #
+    # Install build
+    && pip --disable-pip-version-check --no-cache-dir install build \
+    #
+    # Install twine
+    #
+    && pip --disable-pip-version-check --no-cache-dir install twine \
+    #
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
