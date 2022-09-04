@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2022-09-04
+### Changed
+- devcontainer to install local pymywatertoronto module
+
 ## [1.1.1] - 2022-09-04
 ### Changed
 - devcontainer to install build and twine

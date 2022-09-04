@@ -32,6 +32,6 @@
 			]
 		}
 	},
-	"postCreateCommand": "pip3 install --user -r requirements.txt",
+	"postCreateCommand": "pip3 install --user -r requirements.txt && pip install -e .",
 	"remoteUser": "vscode"
 }
