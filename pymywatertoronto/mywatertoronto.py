@@ -355,7 +355,7 @@ class MyWaterToronto:
         if _consumption_bucket == ConsumptionBuckets.TOTAL_USAGE:
             # Add the current reading from account details
             consumption_data = {
-                KEY_CONSUMPTION: meter[KEY_METER_LAST_READING],
+                KEY_CONSUMPTION: meter[KEY_METER_LAST_READING].lstrip("0"),
                 KEY_CONSUMPTION_UNITOFMEASURE: meter[
                     KEY_METER_UNIT_OF_MEASURE
                 ],  # noqa: E501
