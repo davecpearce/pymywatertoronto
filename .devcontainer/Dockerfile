@@ -12,6 +12,12 @@ RUN apt-get update && apt-get -y dist-upgrade \
     && apt-get -y install git \
     sudo \
     #
+    # Install pip-tools
+    && pip --disable-pip-version-check --no-cache-dir install pip-tools \
+    #
+    # Install bumpver
+    && pip --disable-pip-version-check --no-cache-dir install bumpver \
+    #
     # Install flake8
     && pip --disable-pip-version-check --no-cache-dir install flake8 \
     #
@@ -32,3 +38,11 @@ RUN apt-get update && apt-get -y dist-upgrade \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
+
+ARG REQUIREMENTS_FILE='requirements.txt'
+
+COPY ${REQUIREMENTS_FILE} .
+
+RUN pip-sync ${REQUIREMENTS_FILE} --pip-args '--no-cache-dir --no-deps'
+
+ENTRYPOINT []
