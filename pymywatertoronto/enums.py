@@ -21,3 +21,4 @@ class LastPaymentMethod(Enum):
     IN_PERSION = "3"
     BANK_PAYMENT = "4"
     PAYMENT_DROP_BOX = "5"
+    MYTORONTO_PAY = "6"
