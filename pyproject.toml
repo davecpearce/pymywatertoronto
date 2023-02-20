@@ -21,7 +21,7 @@ dependencies = [
     "aiohttp",
     "pytz",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = "https://github.com/davecpearce/pymywatertoronto"
