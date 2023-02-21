@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 API_BASE_URL = "https://secure.toronto.ca/cc_api/svcaccount_v1/WaterAccount"
-API_VALIDATE_URL = "{0}{1}".format(API_BASE_URL, "/validate")
-API_ACCOUNTDETAILS_URL = "{0}{1}".format(API_BASE_URL, "/accountdetails")  # noqa: E501
-API_CONSUMPTION_URL = "{0}{1}".format(API_BASE_URL, "/consumption")  # noqa: E501
+API_VALIDATE_URL = "{}{}".format(API_BASE_URL, "/validate")
+API_ACCOUNTDETAILS_URL = "{}{}".format(API_BASE_URL, "/accountdetails")  # noqa: E501
+API_CONSUMPTION_URL = "{}{}".format(API_BASE_URL, "/consumption")  # noqa: E501
 
 HTTP_MOVED_TEMPORARILY: int = 302
 HTTP_HEADERS: dict[str, str] = {"content-type": "application/json"}
