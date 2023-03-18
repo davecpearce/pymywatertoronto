@@ -10,6 +10,7 @@ HTTP_MOVED_TEMPORARILY: int = 302
 HTTP_HEADERS: dict[str, str] = {"content-type": "application/json"}
 
 CONSUMPTION_RESULT_OK: int = 200
+BAD_REQUEST: int = 400
 
 API_OP_VALIDATE: str = "VALIDATE"
 
