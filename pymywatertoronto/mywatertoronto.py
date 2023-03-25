@@ -4,17 +4,20 @@ from __future__ import annotations
 
 import json
 import logging
-from aiohttp import ClientSession
+from aiohttp import ClientResponse, ClientSession
+from aiohttp_retry import ExponentialRetry, RetryClient
 from datetime import date, datetime
 from http import HTTPStatus
 from pytz import timezone, utc
 from typing import Any, cast
 
 from .const import (
+    AIOHTTP_RETRY_ATTEMPTS,
     API_ACCOUNTDETAILS_URL,
     API_CONSUMPTION_URL,
     API_OP_VALIDATE,
     API_VALIDATE_URL,
+    BAD_REQUEST,
     CONSUMPTION_RESULT_OK,
     HTTP_HEADERS,
     HTTP_MOVED_TEMPORARILY,
@@ -81,6 +84,7 @@ class MyWaterToronto:
     ) -> None:
         """Initialize."""
         self._session = session
+        self._retry_client = RetryClient(session)
         self._account_number = account_number
         self._client_number = client_number
         self._last_name = last_name
@@ -92,6 +96,12 @@ class MyWaterToronto:
         self._account_details: dict[str, Any] = None
 
         self._consumption_buckets = None
+
+        self._retry_options = ExponentialRetry(
+            attempts=AIOHTTP_RETRY_ATTEMPTS,
+            statuses={BAD_REQUEST},
+            evaluate_response_callback=self._async_evaluate_response,
+        )
 
     async def async_validate_account(self) -> bool:
         """Validate account information with MyWaterToronto."""
@@ -106,12 +116,15 @@ class MyWaterToronto:
             "LAST_PAYMENT_METHOD": self._last_payment_method.value,
         }
 
-        async with self._session.post(
-            url=url, headers=HTTP_HEADERS, json=payload, verify_ssl=False
+        async with self._retry_client.post(
+            url=url,
+            retry_options=self._retry_options,
+            headers=HTTP_HEADERS,
+            json=payload,
+            verify_ssl=False,
         ) as resp:
-            if (
-                resp.status == HTTP_MOVED_TEMPORARILY
-                or resp.real_url.name == "something-went-wrong.html"
+            if (resp.status == HTTP_MOVED_TEMPORARILY) or (
+                resp.real_url.name == "something-went-wrong.html"
             ):
                 raise ValidateAccountInfoError("Invalid account information")
             if resp.status != HTTPStatus.OK:
@@ -145,6 +158,15 @@ class MyWaterToronto:
 
         return True
 
+    async def _async_evaluate_response(self, response: ClientResponse) -> bool:
+        data = await response.json()
+        if KEY_RESULT_CODE in data:
+            result_code = data[KEY_RESULT_CODE]
+            if result_code == BAD_REQUEST:
+                return False
+
+        return True
+
     async def async_get_account_details(self) -> dict[str, Any]:
         """Get the account details from MyWaterToronto."""
 
@@ -158,18 +180,17 @@ class MyWaterToronto:
             "API_OP": "ACCOUNTDETAILS",
             "ACCOUNT_NUMBER": self.account_number_full,
         }
-
-        params_json = {
-            "API_OP": "ACCOUNTDETAILS",
-            "ACCOUNT_NUMBER": self.account_number_full,
-        }
         params = {"refToken": self._ref_token, "json": json.dumps(params_json)}
 
         url = API_ACCOUNTDETAILS_URL
-
-        async with self._session.get(
-            url=url, headers=HTTP_HEADERS, params=params, verify_ssl=False
+        async with self._retry_client.get(
+            url=url,
+            retry_options=self._retry_options,
+            headers=HTTP_HEADERS,
+            params=params,
+            verify_ssl=False,
         ) as resp:
+
             if resp.status != HTTPStatus.OK:
                 json.loads(await resp.text())
                 raise ApiError(
@@ -270,9 +291,7 @@ class MyWaterToronto:
             else selected_meter[0],  # noqa: E501
         )
 
-    async def async_get_consumption(
-        self,
-    ) -> dict[str, Any]:
+    async def async_get_consumption(self, buckets=None) -> dict[str, Any]:
         """Get the meter consumption from MyWaterToronto."""
 
         _LOGGER.debug("Getting consumption data for account")
@@ -294,7 +313,7 @@ class MyWaterToronto:
 
             for meter in premise[KEY_METER_LIST]:
                 meter_consumption = await self.async_get_meter_consumption(
-                    meter,
+                    meter, buckets=buckets
                 )
 
                 premise_consumption[KEY_METER_LIST][
@@ -308,8 +327,7 @@ class MyWaterToronto:
         return account_consumption
 
     async def async_get_meter_consumption(
-        self,
-        meter: dict[str, Any],
+        self, meter: dict[str, Any], buckets=None
     ) -> dict[str, Any]:
         """Get the meter consumption from MyWaterToronto for the specified meter."""  # noqa: E501
 
@@ -324,21 +342,34 @@ class MyWaterToronto:
         }
 
         for bucket in ConsumptionBuckets:
-            consumption = await self.async_get_meter_consumption_for_bucket(
-                meter, consumption_bucket=bucket
-            )
+            """If a subset of buckets was selected, check if current bucket is
+            selected otherwise skip bucket"""
+            if buckets:
+                if bucket not in buckets:
+                    continue
 
-            _LOGGER.debug(
-                "Consumption for bucket %s is %s%s",
-                bucket.value,
-                consumption[KEY_CONSUMPTION],
-                consumption[KEY_CONSUMPTION_UNITOFMEASURE],
-            )
-            meter_data[KEY_CONSUMPTION_DATA][bucket.value] = consumption
+            try:
+                consumption = (
+                    await self.async_get_meter_consumption_for_bucket(  # noqa E501
+                        meter, consumption_bucket=bucket
+                    )
+                )
+            except Exception as error:
+                raise Exception("Error '%s'" % (error))
+            else:
+                _LOGGER.debug(
+                    "Consumption for bucket %s is %s%s",
+                    bucket.value,
+                    consumption[KEY_CONSUMPTION],
+                    consumption[KEY_CONSUMPTION_UNITOFMEASURE],
+                )
+                meter_data[KEY_CONSUMPTION_DATA][
+                    bucket.value
+                ] = consumption  # noqa E501
 
         return meter_data
 
-    async def async_get_meter_consumption_for_bucket(
+    async def async_get_meter_consumption_for_bucket(  # noqa C901
         self,
         meter: dict[str, Any],
         consumption_bucket: ConsumptionBuckets | None,
@@ -376,11 +407,6 @@ class MyWaterToronto:
             params_json = {
                 "API_OP": "CONSUMPTION",
                 "ACCOUNT_NUMBER": self.account_number_full,
-            }
-
-            params_json = {
-                "API_OP": "CONSUMPTION",
-                "ACCOUNT_NUMBER": self.account_number_full,
                 "MIU_ID": meter[KEY_METER_MIU],
                 "START_DATE": consumption_bucket[KEY_CONSUMPTION_START_DATE],
                 "END_DATE": consumption_bucket[KEY_CONSUMPTION_END_DATE],
@@ -398,8 +424,12 @@ class MyWaterToronto:
 
             url = API_CONSUMPTION_URL
 
-            async with self._session.get(
-                url=url, headers=HTTP_HEADERS, params=params, verify_ssl=False
+            async with self._retry_client.get(
+                url=url,
+                retry_options=self._retry_options,
+                headers=HTTP_HEADERS,
+                params=params,
+                verify_ssl=False,
             ) as resp:
                 if resp.status != HTTPStatus.OK:
                     error_text = json.loads(await resp.text())
@@ -436,22 +466,29 @@ class MyWaterToronto:
 
             result_code = data[KEY_RESULT_CODE]
 
-            if result_code != CONSUMPTION_RESULT_OK:
+            if result_code == BAD_REQUEST:
+                """
+                The MyWaterToronto data returns a "Bad Request" error string
+                when there is no data, typically for hourly data request
+                """
+
+                consumption_value = 0
+            elif result_code != CONSUMPTION_RESULT_OK:
                 raise ApiError(
                     f"Error returned from consumption data - resultCode: {result_code}, errorString: {data[KEY_ERROR_STRING]}"  # noqa: E501
                 )
-
-            if KEY_CONSUMPTION_SUMMARY not in data:
-                raise ApiError(
-                    f"Consumption summary could not be found in MyWaterToronto Consumption response: {data}"  # noqa: E501
-                )
-
-            if KEY_CONSUMPTION_TOTAL in data[KEY_CONSUMPTION_SUMMARY]:
-                consumption_value = data[KEY_CONSUMPTION_SUMMARY][
-                    KEY_CONSUMPTION_TOTAL
-                ]  # noqa: E501
             else:
-                consumption_value = 0
+                if KEY_CONSUMPTION_SUMMARY not in data:
+                    raise ApiError(
+                        f"Consumption summary could not be found in MyWaterToronto Consumption response: {data}"  # noqa: E501
+                    )
+
+                if KEY_CONSUMPTION_TOTAL in data[KEY_CONSUMPTION_SUMMARY]:
+                    consumption_value = data[KEY_CONSUMPTION_SUMMARY][
+                        KEY_CONSUMPTION_TOTAL
+                    ]  # noqa: E501
+                else:
+                    consumption_value = 0
 
             consumption_data = {
                 KEY_CONSUMPTION: consumption_value,
