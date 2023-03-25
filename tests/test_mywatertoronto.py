@@ -84,7 +84,9 @@ async def main(dump_data: bool = False):
                 ) as dumpfile:
                     json.dump(account_details, dumpfile, indent=4)
             try:
-                consumption_data = await mywatertoronto.async_get_consumption()
+                consumption_data = await mywatertoronto.async_get_consumption(
+                    buckets=None
+                )
             except (ApiError) as err:
                 logging.debug(
                     "Error getting water consumption data from MyWaterToronto API: %s",  # noqa: E501
@@ -109,24 +111,20 @@ async def main(dump_data: bool = False):
 
                         data = consumption_data[KEY_PREMISE_LIST][premise_id][
                             KEY_METER_LIST
-                        ][
-                            meter_number
-                        ]  # pylint: disable=line-too-long
+                        ][meter_number]
                         first_read_date = data[KEY_METER_FIRST_READ_DATE]
                         logging.debug("First Read Date: %s", first_read_date)
 
+                        c_data = data["consumption_data"]
                         for bucket in ConsumptionBuckets:
-                            consumption = data["consumption_data"][
-                                bucket.value
-                            ][  # noqa: E501
-                                "consumption"
-                            ]
-                            unit = data["consumption_data"][bucket.value][
-                                "unit_of_measure"
-                            ]
-                            logging.debug(
-                                "%s: %s %s", bucket.value, consumption, unit
-                            )  # noqa: E501
+                            if bucket.value in c_data:
+                                b_data = c_data[bucket.value]
+                                consumption = b_data["consumption"]
+                                unit = b_data["unit_of_measure"]
+
+                                logging.debug(
+                                    "%s: %s %s", bucket.value, consumption, unit
+                                )
 
     await session.close()
 

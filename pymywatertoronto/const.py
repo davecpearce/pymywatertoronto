@@ -78,3 +78,6 @@ INTERVAL_MONTH = "Month"
 
 """Data keys for general API responses"""
 KEY_RESULT_CODE = "resultCode"
+
+"""aiohttp_retry settings"""
+AIOHTTP_RETRY_ATTEMPTS = 10
