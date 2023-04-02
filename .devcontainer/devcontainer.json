@@ -26,7 +26,12 @@
         "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
         "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
       },
-      "extensions": ["ms-python.python", "ms-python.vscode-pylance"]
+      "extensions": [
+        "ms-python.vscode-pylance",
+        "ms-python.flake8",
+        "esbenp.prettier-vscode",
+        "github.vscode-pull-request-github"
+      ]
     }
   },
   "postCreateCommand": "pip3 install --user -r requirements_dev.txt && pip install -e .",
