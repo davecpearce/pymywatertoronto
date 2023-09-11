@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 
 
-def format_date(date: date) -> date:
+def format_date(fdate: date) -> date:
     """
     Return date only from time
 
@@ -14,10 +14,10 @@ def format_date(date: date) -> date:
         Formatted date.
 
     """
-    return date.strftime("%Y-%m-%d")  # noqa: WPS323
+    return fdate.strftime("%Y-%m-%d")
 
 
-def format_start_year(date: date) -> date:
+def format_start_year(fdate: date) -> date:
     """
     Format date starting at the first day of year for provided datetime.
 
@@ -28,10 +28,10 @@ def format_start_year(date: date) -> date:
         Formatted date.
 
     """
-    return format_date(date.replace(month=1, day=1))
+    return format_date(fdate.replace(month=1, day=1))
 
 
-def format_start_month(date: date) -> date:
+def format_start_month(fdate: date) -> date:
     """
     Format date starting at the first of the month for provided datetime.
 
@@ -42,10 +42,10 @@ def format_start_month(date: date) -> date:
         Formatted date.
 
     """
-    return format_date(date.replace(day=1))
+    return format_date(fdate.replace(day=1))
 
 
-def format_start_week(date: date) -> date:
+def format_start_week(fdate: date) -> date:
     """
     Format date starting at the start of week for provided date.
 
@@ -55,10 +55,10 @@ def format_start_week(date: date) -> date:
     Returns:
         Formatted date.
     """
-    return format_date(date - timedelta(days=date.weekday()))
+    return format_date(fdate - timedelta(days=fdate.weekday()))
 
 
-def format_yesterday(date: date) -> date:
+def format_yesterday(fdate: date) -> date:
     """
     Format date for yesterday for provided datetime.
 
@@ -69,4 +69,4 @@ def format_yesterday(date: date) -> date:
         Formatted date.
 
     """
-    return format_date(date - timedelta(days=1))
+    return format_date(fdate - timedelta(days=1))

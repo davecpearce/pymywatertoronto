@@ -1,1 +1,1 @@
-""" Test files for pymywatertoronto. """
+"""Test suite for the pymywatertoronto package."""

@@ -3,10 +3,10 @@ bandit
 black
 build
 bumpver
-flake8
 isort
 pip-tools
 pre-commit
+pylint
 python-dotenv
 reorder-python-imports
 twine

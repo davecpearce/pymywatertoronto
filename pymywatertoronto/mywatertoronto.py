@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-from aiohttp import ClientResponse, ClientSession
-from aiohttp_retry import ExponentialRetry, RetryClient
 from datetime import date, datetime
 from http import HTTPStatus
-from pytz import timezone, utc
 from typing import Any, cast
+
+from aiohttp import ClientResponse, ClientSession
+from aiohttp_retry import ExponentialRetry, RetryClient
+from pytz import timezone, utc
 
 from .const import (
     AIOHTTP_RETRY_ATTEMPTS,
@@ -57,6 +58,7 @@ from .errors import (
     AccountDetailsError,
     AccountNotValidatedError,
     ApiError,
+    GetConsumptionError,
     SessionValidationError,
     ValidateAccountInfoError,
 )
@@ -132,29 +134,25 @@ class MyWaterToronto:
                 raise ApiError(
                     f"Invalid response from MyWaterToronto API: {resp.status}"
                 )
-            _LOGGER.debug(
-                "Data retrieved from %s, status: %s", url, resp.status
-            )  # noqa: E501
+            _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
             data = await resp.json()
 
-        _LOGGER.debug(
-            "Data retrieved from validate --> %s", json.dumps(data, indent=4)
-        )  # noqa: E501
+        _LOGGER.debug("Data retrieved from validate --> %s", json.dumps(data, indent=4))
 
         if KEY_VALIDATE_RESPONSE not in data:
             raise (
-                f"{KEY_VALIDATE_RESPONSE} key could not be found in MyWaterToronto Validation Response: {data}"  # noqa: E501
+                f"{KEY_VALIDATE_RESPONSE} key could not be found in "
+                f"MyWaterToronto Validation Response: {data}"
             )
 
         if KEY_REF_TOKEN not in data[KEY_VALIDATE_RESPONSE]:
             raise ApiError(
-                f"{KEY_REF_TOKEN} key could not be found in MyWaterToronto Validation Response: {data}"  # noqa: E501
+                f"{KEY_REF_TOKEN} key could not be found in "
+                f"MyWaterToronto Validation Response: {data}"
             )
         self._ref_token = data[KEY_VALIDATE_RESPONSE][KEY_REF_TOKEN]
 
-        _LOGGER.debug(
-            "Ref token retrieved from validate --> %s", self._ref_token
-        )  # noqa: E501
+        _LOGGER.debug("Ref token retrieved from validate --> %s", self._ref_token)
 
         return True
 
@@ -170,11 +168,9 @@ class MyWaterToronto:
     async def async_get_account_details(self) -> dict[str, Any]:
         """Get the account details from MyWaterToronto."""
 
-        # Check if there is a ref token"""
+        # Check if there is a ref token
         if not self._ref_token:
-            raise AccountNotValidatedError(
-                "The account has not been validated yet"
-            )  # noqa: E501
+            raise AccountNotValidatedError("The account has not been validated yet")
 
         params_json = {
             "API_OP": "ACCOUNTDETAILS",
@@ -196,24 +192,24 @@ class MyWaterToronto:
                 raise ApiError(
                     f"Invalid response from MyWaterToronto API: {resp.status}"
                 )
-            _LOGGER.debug(
-                "Data retrieved from %s, status: %s", url, resp.status
-            )  # noqa: E501
+            _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
             data = await resp.json()
 
         _LOGGER.debug(
             "Data retrieved from account details --> %s",
-            json.dumps(data, indent=4),  # noqa: E501
+            json.dumps(data, indent=4),
         )
 
         if KEY_PREMISE_LIST not in data:
             raise AccountDetailsError(
-                f"Premise list could not be found in MyWaterToronto Account Details response: {data}"  # noqa: E501
+                f"Premise list could not be found in "
+                f"MyWaterToronto Account Details response: {data}"
             )
 
         if KEY_METER_LIST not in data[KEY_PREMISE_LIST][0]:
             raise AccountDetailsError(
-                f"Meter list could not be found in MyWaterToronto Account Details response: {data}"  # noqa: E501
+                f"Meter list could not be found in "
+                f"MyWaterToronto Account Details response: {data}"
             )
 
         self._account_details = cast(
@@ -241,31 +237,31 @@ class MyWaterToronto:
 
         self._consumption_buckets = {
             ConsumptionBuckets.TOTAL_USAGE: {
-                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.TOTAL_USAGE.value,  # noqa: E501
+                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.TOTAL_USAGE.value,
                 KEY_CONSUMPTION_INTERVAL_TYPE: INTERVAL_MONTH,
                 KEY_CONSUMPTION_START_DATE: meter[KEY_METER_FIRST_READ_DATE],
                 KEY_CONSUMPTION_END_DATE: format_date(_current_date),
             },
             ConsumptionBuckets.TODAY_USAGE: {
-                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.TODAY_USAGE.value,  # noqa: E501
+                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.TODAY_USAGE.value,
                 KEY_CONSUMPTION_INTERVAL_TYPE: INTERVAL_HOUR,
                 KEY_CONSUMPTION_START_DATE: format_date(_current_date),
                 KEY_CONSUMPTION_END_DATE: format_date(_current_date),
             },
             ConsumptionBuckets.WEEK_TO_DATE_USAGE: {
-                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.WEEK_TO_DATE_USAGE.value,  # noqa: E501
+                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.WEEK_TO_DATE_USAGE.value,
                 KEY_CONSUMPTION_INTERVAL_TYPE: INTERVAL_DAY,
                 KEY_CONSUMPTION_START_DATE: format_start_week(_current_date),
                 KEY_CONSUMPTION_END_DATE: format_date(_current_date),
             },
             ConsumptionBuckets.MONTH_TO_DATE_USAGE: {
-                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.MONTH_TO_DATE_USAGE.value,  # noqa: E501
+                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.MONTH_TO_DATE_USAGE.value,  # pylint: disable=line-too-long
                 KEY_CONSUMPTION_INTERVAL_TYPE: INTERVAL_DAY,
                 KEY_CONSUMPTION_START_DATE: format_start_month(_current_date),
                 KEY_CONSUMPTION_END_DATE: format_date(_current_date),
             },
             ConsumptionBuckets.YEAR_TO_DATE_USAGE: {
-                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.YEAR_TO_DATE_USAGE.value,  # noqa: E501
+                KEY_CONSUMPTION_VALUE_TYPE: ConsumptionBuckets.YEAR_TO_DATE_USAGE.value,
                 KEY_CONSUMPTION_INTERVAL_TYPE: ytd_interval,
                 KEY_CONSUMPTION_START_DATE: format_start_year(_current_date),
                 KEY_CONSUMPTION_END_DATE: format_date(_current_date),
@@ -286,9 +282,7 @@ class MyWaterToronto:
 
         return cast(
             dict[str, Any],
-            selected_meter
-            if isinstance(selected_meter, dict)
-            else selected_meter[0],  # noqa: E501
+            selected_meter if isinstance(selected_meter, dict) else selected_meter[0],
         )
 
     async def async_get_consumption(self, buckets=None) -> dict[str, Any]:
@@ -329,11 +323,9 @@ class MyWaterToronto:
     async def async_get_meter_consumption(
         self, meter: dict[str, Any], buckets=None
     ) -> dict[str, Any]:
-        """Get the meter consumption from MyWaterToronto for the specified meter."""  # noqa: E501
+        """Get the meter consumption from MyWaterToronto for the specified meter."""
 
-        _LOGGER.debug(
-            "Getting consumption data for meter: %s", meter[KEY_METER_NUMBER]
-        )  # noqa: E501
+        _LOGGER.debug("Getting consumption data for meter: %s", meter[KEY_METER_NUMBER])
 
         meter_data = {
             KEY_METER_FIRST_READ_DATE: meter[KEY_METER_FIRST_READ_DATE],
@@ -342,39 +334,36 @@ class MyWaterToronto:
         }
 
         for bucket in ConsumptionBuckets:
-            """If a subset of buckets was selected, check if current bucket is
-            selected otherwise skip bucket"""
+            # If a subset of buckets was selected, check if current bucket is
+            # selected otherwise skip bucket
             if buckets:
                 if bucket not in buckets:
                     continue
 
             try:
-                consumption = (
-                    await self.async_get_meter_consumption_for_bucket(  # noqa E501
-                        meter, consumption_bucket=bucket
-                    )
+                consumption = await self.async_get_meter_consumption_for_bucket(
+                    meter, consumption_bucket=bucket
                 )
             except Exception as error:
-                raise Exception("Error '%s'" % (error))
-            else:
-                _LOGGER.debug(
-                    "Consumption for bucket %s is %s%s",
-                    bucket.value,
-                    consumption[KEY_CONSUMPTION],
-                    consumption[KEY_CONSUMPTION_UNITOFMEASURE],
-                )
-                meter_data[KEY_CONSUMPTION_DATA][
-                    bucket.value
-                ] = consumption  # noqa E501
+                raise GetConsumptionError(f"Error '{error}'") from error
+
+            _LOGGER.debug(
+                "Consumption for bucket %s is %s%s",
+                bucket.value,
+                consumption[KEY_CONSUMPTION],
+                consumption[KEY_CONSUMPTION_UNITOFMEASURE],
+            )
+            meter_data[KEY_CONSUMPTION_DATA][bucket.value] = consumption
 
         return meter_data
 
-    async def async_get_meter_consumption_for_bucket(  # noqa C901
+    async def async_get_meter_consumption_for_bucket(
         self,
         meter: dict[str, Any],
         consumption_bucket: ConsumptionBuckets | None,
     ) -> dict[str, Any]:
-        """Get the meter consumption from MyWaterToronto for the specified bucket."""  # noqa: E501
+        # pylint: disable=too-many-branches
+        """Get the meter consumption from MyWaterToronto for the specified bucket."""
 
         consumption_data = None
 
@@ -387,16 +376,12 @@ class MyWaterToronto:
             # Add the current reading from account details
             consumption_data = {
                 KEY_CONSUMPTION: meter[KEY_METER_LAST_READING].lstrip("0"),
-                KEY_CONSUMPTION_UNITOFMEASURE: meter[
-                    KEY_METER_UNIT_OF_MEASURE
-                ],  # noqa: E501
+                KEY_CONSUMPTION_UNITOFMEASURE: meter[KEY_METER_UNIT_OF_MEASURE],
             }
         else:
             # Check if there is a ref token
             if not self._ref_token:
-                raise AccountNotValidatedError(
-                    "The account has not been validated yet"
-                )  # noqa: E501
+                raise AccountNotValidatedError("The account has not been validated yet")
 
             # Check if the consumption buckets have been defined
             if not self._consumption_buckets:
@@ -410,15 +395,13 @@ class MyWaterToronto:
                 "MIU_ID": meter[KEY_METER_MIU],
                 "START_DATE": consumption_bucket[KEY_CONSUMPTION_START_DATE],
                 "END_DATE": consumption_bucket[KEY_CONSUMPTION_END_DATE],
-                "INTERVAL_TYPE": consumption_bucket[
-                    KEY_CONSUMPTION_INTERVAL_TYPE
-                ],  # noqa: E501
+                "INTERVAL_TYPE": consumption_bucket[KEY_CONSUMPTION_INTERVAL_TYPE],
             }
 
             params = {
                 "refToken": self._ref_token,
                 "json": json.dumps(params_json),
-            }  # noqa: E501
+            }
 
             _LOGGER.debug("Params to retrieve consumption data: %s", params)
 
@@ -434,16 +417,16 @@ class MyWaterToronto:
                 if resp.status != HTTPStatus.OK:
                     error_text = json.loads(await resp.text())
                     raise ApiError(
-                        f"Invalid response from MyWaterToronto Consumption API: {error_text}"  # noqa: E501
+                        f"Invalid response from MyWaterToronto "
+                        f"Consumption API: {error_text}"
                     )
                 if resp.content_type != "application/json":
                     raise ApiError(
-                        "Response is not in application/json format form MyWaterToronto Consumption API"  # noqa: E501
+                        "Response is not in application/json "
+                        "format form MyWaterToronto Consumption API"
                     )
 
-                _LOGGER.debug(
-                    "Data retrieved from %s, status: %s", url, resp.status
-                )  # noqa: E501
+                _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
                 data = await resp.json()
 
             _LOGGER.debug(
@@ -459,42 +442,41 @@ class MyWaterToronto:
                         error_message = validate_response[KEY_ERROR_MESSAGE]
                         if error_message == STATUS_VALIDATION_ERROR:
                             raise SessionValidationError(
-                                "Session has timed out or it has not been validated yet"  # noqa: E501
+                                "Session has timed out or it has not been validated yet"
                             )
-                        else:
-                            raise ApiError("Invalid consumption data returned")
+
+                        raise ApiError("Invalid consumption data returned")
 
             result_code = data[KEY_RESULT_CODE]
 
             if result_code == BAD_REQUEST:
-                """
-                The MyWaterToronto data returns a "Bad Request" error string
-                when there is no data, typically for hourly data request
-                """
+                # The MyWaterToronto data returns a 'Bad Request' error string
+                # when there is no data, typically for hourly data request
 
                 consumption_value = 0
             elif result_code != CONSUMPTION_RESULT_OK:
                 raise ApiError(
-                    f"Error returned from consumption data - resultCode: {result_code}, errorString: {data[KEY_ERROR_STRING]}"  # noqa: E501
+                    f"Error returned from consumption data "
+                    f"- resultCode: {result_code}, "
+                    f"errorString: {data[KEY_ERROR_STRING]}"
                 )
             else:
                 if KEY_CONSUMPTION_SUMMARY not in data:
                     raise ApiError(
-                        f"Consumption summary could not be found in MyWaterToronto Consumption response: {data}"  # noqa: E501
+                        f"Consumption summary could not be found "
+                        f"in MyWaterToronto Consumption response: {data}"
                     )
 
                 if KEY_CONSUMPTION_TOTAL in data[KEY_CONSUMPTION_SUMMARY]:
                     consumption_value = data[KEY_CONSUMPTION_SUMMARY][
                         KEY_CONSUMPTION_TOTAL
-                    ]  # noqa: E501
+                    ]
                 else:
                     consumption_value = 0
 
             consumption_data = {
                 KEY_CONSUMPTION: consumption_value,
-                KEY_CONSUMPTION_UNITOFMEASURE: meter[
-                    KEY_METER_UNIT_OF_MEASURE
-                ],  # noqa: E501
+                KEY_CONSUMPTION_UNITOFMEASURE: meter[KEY_METER_UNIT_OF_MEASURE],
             }
 
         return consumption_data
