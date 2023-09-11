@@ -6,6 +6,7 @@ bumpver
 isort
 pip-tools
 pre-commit
+pylint
 python-dotenv
 reorder-python-imports
 twine
