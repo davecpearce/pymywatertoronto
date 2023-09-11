@@ -1,13 +1,14 @@
 """ Python test file for pymywatertoronto. """
 
-import argparse
-import asyncio
 import json
 import logging
-import os
+from os import environ
+from os.path import dirname, join
+
+import argparse
+import asyncio
 from aiohttp import ClientSession
 from dotenv import load_dotenv
-from os.path import dirname, join
 
 from pymywatertoronto.const import (
     KEY_ADDRESS,
@@ -39,11 +40,11 @@ logging.basicConfig(
 dotenv_path = join(dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
-ACCOUNT_NUMBER = os.environ.get("ACCOUNT_NUMBER")
-CLIENT_NUMBER = os.environ.get("CLIENT_NUMBER")
-LAST_NAME = os.environ.get("LAST_NAME")
-POSTAL_CODE = os.environ.get("POSTAL_CODE")
-LAST_PAYMENT_METHOD = os.environ.get("LAST_PAYMENT_METHOD")
+ACCOUNT_NUMBER = environ.get("ACCOUNT_NUMBER")
+CLIENT_NUMBER = environ.get("CLIENT_NUMBER")
+LAST_NAME = environ.get("LAST_NAME")
+POSTAL_CODE = environ.get("POSTAL_CODE")
+LAST_PAYMENT_METHOD = environ.get("LAST_PAYMENT_METHOD")
 
 
 async def main(dump_data: bool = False):
@@ -62,9 +63,7 @@ async def main(dump_data: bool = False):
     try:
         await mywatertoronto.async_validate_account()
     except (ValidateAccountInfoError, ApiError) as err:
-        logging.debug(
-            "Error validating account with MyWaterToronto API: %s", err
-        )  # noqa: E501
+        logging.debug("Error validating account with MyWaterToronto API: %s", err)
     else:
         try:
             account_details = await mywatertoronto.async_get_account_details()
@@ -72,10 +71,10 @@ async def main(dump_data: bool = False):
             AccountDetailsError,
             AccountNotValidatedError,
             ApiError,
-        ) as err:  # noqa: E501
+        ) as err:
             logging.debug(
                 "Error getting account details from MyWaterToronto API: %s",
-                err,  # noqa: E501
+                err,
             )
         else:
             if dump_data:
@@ -89,13 +88,12 @@ async def main(dump_data: bool = False):
                 )
             except (ApiError) as err:
                 logging.debug(
-                    "Error getting water consumption data from MyWaterToronto API: %s",  # noqa: E501
+                    "Error getting water consumption data from "
+                    "MyWaterToronto API: %s",
                     err,
-                )  # pylint: disable=line-too-long
+                )
             else:
-                with open(
-                    "data_consumption.json", "w", encoding="UTF-8"
-                ) as dumpfile:  # noqa: E501
+                with open("data_consumption.json", "w", encoding="UTF-8") as dumpfile:
                     json.dump(consumption_data, dumpfile, indent=4)
 
                 for premise in account_details[KEY_PREMISE_LIST]:
@@ -130,9 +128,7 @@ async def main(dump_data: bool = False):
 
 
 parser = argparse.ArgumentParser("test")
-parser.add_argument(
-    "-d", action="store_true", help="Dumps data into json file"
-)  # noqa: E501
+parser.add_argument("-d", action="store_true", help="Dumps data into json file")
 args = parser.parse_args()
 print(args.d)
 

@@ -22,7 +22,7 @@ dependencies = [
     "aiohttp_retry",
     "pytz",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.urls]
 Homepage = "https://github.com/davecpearce/pymywatertoronto"
@@ -39,4 +39,67 @@ push = true
 "pyproject.toml" = [
     'current_version = "{version}"',
     'version = "{version}"'
+]
+
+[tool.pylint.BASIC]
+class-const-naming-style = "any"
+good-names = [
+    "_",
+    "ev",
+    "ex",
+    "fp",
+    "i",
+    "id",
+    "j",
+    "k",
+    "Run",
+    "ip",
+]
+
+[tool.pylint.MAIN]
+py-version = "3.11"
+ignore = [
+    "tests",
+]
+
+[tool.pylint."MESSAGES CONTROL"]
+# wrong-import-order - isort guards this
+disable = [
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals"
+]
+
+[tool.pylint.REPORTS]
+score = false
+
+[tool.pylint.TYPECHECK]
+ignored-classes = [
+    "_CountingAttr",  # for attrs
+]
+
+[tool.isort]
+# https://github.com/PyCQA/isort/wiki/isort-Settings
+profile = "black"
+# will group `import x` and `from x import` of the same module.
+force_sort_within_sections = true
+known_first_party = [
+    "pymywatertoronto",
+    "tests",
+]
+forced_separate = [
+    "tests",
+]
+combine_as_imports = true
+default_section = "THIRDPARTY"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = [
+  "."
+]
+addopts = "-qq --timeout=9 --cov-report=html:htmlcov --cov-report=term-missing --cov=pymywatertoronto --cov-fail-under=100"
+console_output_style = "count"
+testpaths = [
+  "tests",
 ]

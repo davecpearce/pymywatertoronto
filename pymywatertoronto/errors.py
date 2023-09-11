@@ -1,3 +1,6 @@
+""" Define package errors """
+
+
 class AccountNotValidatedError(Exception):
     """Raised when the account has not been validated yet."""
 
@@ -5,9 +8,6 @@ class AccountNotValidatedError(Exception):
         """Initialize."""
         super().__init__(status)
         self.status = status
-
-
-""" Define package errors """
 
 
 class ApiError(Exception):
@@ -21,6 +21,15 @@ class ApiError(Exception):
 
 class AccountDetailsError(Exception):
     """Raised when MyWaterToronto API request ended in error."""
+
+    def __init__(self, status: str) -> None:
+        """Initialize."""
+        super().__init__(status)
+        self.status = status
+
+
+class GetConsumptionError(Exception):
+    """Raised when MyWaterToronto get consumption equest ended in error."""
 
     def __init__(self, status: str) -> None:
         """Initialize."""

@@ -3,7 +3,6 @@ bandit
 black
 build
 bumpver
-flake8
 isort
 pip-tools
 pre-commit
