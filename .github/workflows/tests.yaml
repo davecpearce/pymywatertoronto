@@ -31,4 +31,4 @@ jobs:
           pip install -e .
       - name: Run pre-commit on all files
         run: |
-          pre-commit run --all-files --color=always
+          pre-commit run --all-files --color=alway
