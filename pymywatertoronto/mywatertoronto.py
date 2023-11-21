@@ -306,6 +306,16 @@ class MyWaterToronto:
             }
 
             for meter in premise[KEY_METER_LIST]:
+                # Confirm meter has a lastReadDate element otherwise skip meter
+
+                if KEY_METER_LAST_READ_DATE not in meter:
+                    _LOGGER.debug(
+                        "Meter: %s does not have a %s value, skipping meter",
+                        meter[KEY_METER_NUMBER],
+                        KEY_METER_LAST_READ_DATE,
+                    )
+                    continue
+
                 meter_consumption = await self.async_get_meter_consumption(
                     meter, buckets=buckets
                 )
@@ -326,7 +336,6 @@ class MyWaterToronto:
         """Get the meter consumption from MyWaterToronto for the specified meter."""
 
         _LOGGER.debug("Getting consumption data for meter: %s", meter[KEY_METER_NUMBER])
-
         meter_data = {
             KEY_METER_FIRST_READ_DATE: meter[KEY_METER_FIRST_READ_DATE],
             KEY_METER_LAST_READ_DATE: meter[KEY_METER_LAST_READ_DATE],
