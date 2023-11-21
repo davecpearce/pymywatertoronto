@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from pymywatertoronto.const import (
     KEY_ADDRESS,
     KEY_METER_FIRST_READ_DATE,
+    KEY_METER_LAST_READ_DATE,
     KEY_METER_LIST,
     KEY_METER_NUMBER,
     KEY_PREMISE_ID,
@@ -103,6 +104,10 @@ async def main(dump_data: bool = False):
 
                     meter_list = premise[KEY_METER_LIST]
                     for meter in meter_list:
+                        # Skip meter if lastReadDate is not in the meter
+                        if KEY_METER_LAST_READ_DATE not in meter:
+                            continue
+
                         meter_number = meter[KEY_METER_NUMBER]
                         meter_name = f"{premise_address} {meter_number}"
                         logging.debug("Meter Name: %s", meter_name)
